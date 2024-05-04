@@ -1,8 +1,8 @@
-// Jim Whitehead
-// Created: 4/14/2024
+// Braden Humphrey
+// Created: 4/30/2024
 // Phaser: 3.70.0
 //
-// Cubey
+// PixelShmup
 //
 // An example of putting sprites on the screen using Phaser
 // 
@@ -19,10 +19,10 @@ let config = {
     render: {
         pixelArt: true  // prevent pixel art from getting blurred when scaled
     },
+    fps: {forceSetTimeOut: true, target:30},
     width: 800,
     height: 600,
-    scene: [PixelShmup],
-    fps: {forceSetTimeOut: true, target:30}
+    scene: [PixelShmup]
 }
 
 const game = new Phaser.Game(config);
