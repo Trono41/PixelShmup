@@ -19,16 +19,14 @@ class Player extends Phaser.GameObjects.Sprite {
     update() {
         // move left
         if (this.left.isDown) {
-            if (this.x > (this.displayWidth/2)) {
-                console.log("Moving Left");
+            if (this.x > ((this.displayWidth/2) + 20)) {
                 this.x -= this.playerSpeed;
             }
         }
 
         // move right
         if (this.right.isDown) {
-            if (this.x < (game.config.width - (this.displayWidth/2))) {
-                console.log("Moving Right");
+            if (this.x < ((game.config.width - (this.displayWidth/2)) - 20)) {
                 this.x += this.playerSpeed;
             }
         }
