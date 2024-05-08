@@ -4,9 +4,12 @@ class PixelShmup extends Phaser.Scene {
 
         this.my = {sprite: {}};
 
-        this.playerSpeed = 5;
-        this.playerBulletSpeed = 7;
-        this.enemyBulletSpeed = 4;
+        this.playerSpeed = 7;
+        this.playerBulletSpeed = 10;
+        this.spawnTimer = 0;
+        this.target1 = 240;
+        this.target2 = 360;
+        this.enemyBulletSpeed = 5;
         this.enemy1FiringChance = 0;
     }
 
@@ -39,19 +42,82 @@ class PixelShmup extends Phaser.Scene {
     create() {
         let my = this.my;
 
+        let points1 = [
+            150, -60,
+            150, 44,
+            97, 123,
+            90, 192,
+            145, 288,
+            286, 333,
+            378, 338,
+            554, 355,
+            734, 368,
+            863, 402,
+            868, 468,
+            837, 523,
+            718, 551,
+            556, 565,
+            381, 581,
+            315, 609,
+            279, 669,
+            311, 733,
+            355, 780,
+            417, 860
+        ];
+        
+        let points2 = [
+            786, -60,
+            786, 26,
+            827, 95,
+            805, 143,
+            681, 185,
+            547, 208,
+            362, 233,
+            203, 264,
+            103, 312, 
+            68, 368,
+            116, 466, 
+            205, 492,
+            370, 521,
+            519, 549,
+            617, 573,
+            700, 590,
+            770, 625,
+            764, 682,
+            704, 756,
+            648, 860
+        ];
+
+        this.curves = [];
+
+        this.enemyArr = [
+            "fighter",
+            "interceptor",
+            "bomber"
+        ];
+
+        my.sprite.spawnedEnemies = [];
+
+        this.curves.push(new Phaser.Curves.Spline(points1));
+        this.curves.push(new Phaser.Curves.Spline(points2));
+
+        this.totalEnemies = 1;
+        this.currEnemies = 0;
+        this.intermission = 0;
+
+        this.score = 0;
+
         this.left = this.input.keyboard.addKey("A");
         this.right = this.input.keyboard.addKey("D");
-        // this.rKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
         this.space = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
         my.sprite.player = new Player(this, game.config.width/2, game.config.height - 40, "playerPlane", null, this.left, this.right, 5);
         my.sprite.player.setScale(2);
 
-        my.sprite.enemy1 = this.add.sprite(game.config.width/3, 30, "fighter");
+        my.sprite.enemy1 = this.add.sprite(game.config.width/2 - 550, 30, "fighter");
         my.sprite.enemy1.setScale(2.2);
         my.sprite.enemy1.flipY = true;
-
-        my.sprite.enemy2 = this.add.sprite(game.config.width/3 + 200, 30, "interceptor");
+        my.sprite.enemy2 = this.add.sprite(game.config.width/2 + 550, 30, "interceptor");
         my.sprite.enemy2.setScale(2.2);
         my.sprite.enemy2.flipY = true;
 
@@ -59,16 +125,17 @@ class PixelShmup extends Phaser.Scene {
         // Create bullet group for player (5)
         my.sprite.playerBulletGroup = this.add.group({
             defaultKey: "playerBullet",
-            maxSize: 5
+            maxSize: 10
         })
 
         my.sprite.playerBulletGroup.createMultiple({
             active: false,
+            setXY: {x: -200, y: -200},
             key: my.sprite.playerBulletGroup.defaultKey,
             repeat: my.sprite.playerBulletGroup.maxSize - 1
         });
 
-        my.sprite.enemy1BulletGroup = this.add.group({
+        /*my.sprite.enemy1BulletGroup = this.add.group({
             defaultKey: "enemyBullet",
             maxSize: 1
         })
@@ -90,7 +157,7 @@ class PixelShmup extends Phaser.Scene {
             active: false,
             key: my.sprite.enemy2BulletGroup.defaultKey,
             repeat: my.sprite.enemy2BulletGroup.maxSize - 1
-        });
+        });*/
 
         // Number of update() calls between player's shots
         this.playerBulletCooldown = 10;
@@ -123,8 +190,35 @@ class PixelShmup extends Phaser.Scene {
     update() {
         let my = this.my;
         this.playerBulletCooldownCounter--;
+        this.spawnTimer++;
         this.enemy1BulletCooldownCounter--;
         this.enemy2BulletCooldownCounter--;
+
+        if (this.currEnemies < this.totalEnemies) {
+            if (this.spawnTimer == this.target1) {
+                this.spawnEnemies();
+                this.currEnemies++;
+                this.target1 += 240;
+            }
+            if (this.spawnTimer == this.target2) {
+                this.spawnEnemies();
+                this.currEnemies++;
+                this.target2 += 240;
+            }
+        }
+
+        /*if (this.currEnemies == this.totalEnemies) {
+            console.log("Wave complete!");
+            this.intermission++;
+            if (this.intermission >= 600) {
+                this.totalEnemies += 5;
+                this.currEnemies = 0;
+                this.intermission = 0;
+                this.spawnTimer = 0;
+                this.target1 = 240;
+                this.target2 = 360;
+            }
+        }*/
 
         // player firing behavior
         if (this.space.isDown) {
@@ -140,6 +234,30 @@ class PixelShmup extends Phaser.Scene {
                         volume: 1
                     });
                     this.playerBulletCooldownCounter = this.playerBulletCooldown;
+                }
+            }
+        }
+
+        for (let playerBullet of my.sprite.playerBulletGroup.getChildren()) {
+            for (let enemy of my.sprite.spawnedEnemies) {
+                if (this.collides(enemy, playerBullet)) {
+                    // play destroy animation and enemyDestroyed sound when playerBullet hits enemy1
+                    this.explosion = this.add.sprite(enemy.x, enemy.y, "explosion1").setScale(2).play("explosion");
+                    
+                    // clear out playerBullet and enemy
+                    playerBullet.y = -100;
+                    enemy.stopFollow();
+                    enemy.visible = false;
+                    enemy.y = 900;
+
+                    this.sound.play("enemyDestroyed", {
+                        volume: 1
+                    });
+
+                    this.explosion.on(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
+                        this.score += 100;
+                        console.log("Score: " + this.score);
+                    }, this);
                 }
             }
         }
@@ -209,7 +327,7 @@ class PixelShmup extends Phaser.Scene {
         }
 
         // enemy1 firing behavior
-        if (my.sprite.enemy1.visible = true) {
+        /*if (my.sprite.enemy1.visible = true) {
             if (this.enemy1BulletCooldownCounter < 0) {
                 let enemy1Bullet = my.sprite.enemy1BulletGroup.getFirstDead();
                     
@@ -219,15 +337,15 @@ class PixelShmup extends Phaser.Scene {
                     enemy1Bullet.x = my.sprite.enemy1.x;
                     enemy1Bullet.y = my.sprite.enemy1.y + (my.sprite.enemy1.displayHeight/3);
                     this.sound.play('enemyFiring', {
-                        volume: 0
+                        volume: 0.2
                     });
                     this.enemy1BulletCooldownCounter = this.enemy1BulletCooldown;
                 }
             }
-        }
+        }*/
 
         // collision for enemy1Bullet and player
-        for (let enemy1Bullet of my.sprite.enemy1BulletGroup.getChildren()) {
+        /*for (let enemy1Bullet of my.sprite.enemy1BulletGroup.getChildren()) {
             if (this.collides(my.sprite.player, enemy1Bullet)) {
                 // play destroy animation and enemyDestroyed sound when playerBullet hits enemy1
                 this.explosion = this.add.sprite(my.sprite.player.x, my.sprite.player.y, "explosion1").setScale(2).play("explosion");
@@ -266,7 +384,7 @@ class PixelShmup extends Phaser.Scene {
                     enemy2Bullet.x = my.sprite.enemy2.x;
                     enemy2Bullet.y = my.sprite.enemy2.y + (my.sprite.enemy2.displayHeight/3);
                     this.sound.play('enemyFiring', {
-                        volume: 0
+                        volume: 0.2
                     });
                     this.enemy2BulletCooldownCounter = this.enemy2BulletCooldown;
                 }
@@ -300,7 +418,7 @@ class PixelShmup extends Phaser.Scene {
                 enemy2Bullet.active = false;
                 enemy2Bullet.visible = false;
             }
-        }
+        }*/
 
         if (this.collides(my.sprite.enemy1, my.sprite.enemy2)) {
             my.sprite.enemy1.x += 10;
@@ -308,15 +426,10 @@ class PixelShmup extends Phaser.Scene {
         }
 
         my.sprite.playerBulletGroup.incY(-this.playerBulletSpeed);
-        my.sprite.enemy1BulletGroup.incY(this.enemyBulletSpeed);
-        my.sprite.enemy2BulletGroup.incY(this.enemyBulletSpeed);
+        // my.sprite.enemy1BulletGroup.incY(this.enemyBulletSpeed);
+        // my.sprite.enemy2BulletGroup.incY(this.enemyBulletSpeed);
 
-
-        /*
-        if (this.rKey.isDown) {
-            console.log(Math.round(Math.random()*2));
-        }
-        */
+        my.sprite.spawnedEnemies = my.sprite.spawnedEnemies.filter((enemy) => enemy.y < game.config.height);
 
         // Calls Player class update()
         my.sprite.player.update();
@@ -326,5 +439,29 @@ class PixelShmup extends Phaser.Scene {
         if(Math.abs(a.x - b.x) > (a.displayWidth/2 + b.displayWidth/2)) return false;
         if(Math.abs(a.y - b.y) > (a.displayHeight/3 + b.displayHeight/3)) return false;
         return true;
+    }
+
+    spawnEnemies() {
+        let pickPath = Math.round(Math.random()*(this.curves.length - 1));
+        let mySpline = this.curves[pickPath];
+        let firstPoint = mySpline.points[0];
+
+        let pickEnemy = Math.round(Math.random()*(this.enemyArr.length - 1));
+        let myEnemy = this.enemyArr[pickEnemy];
+
+        let tmpEnemy = this.add.follower(mySpline, firstPoint.x, firstPoint.y, myEnemy);
+        tmpEnemy.setScale(2);
+        if (this.my.sprite.spawnedEnemies.length < 10) {
+            this.my.sprite.spawnedEnemies.push(tmpEnemy.startFollow({
+                from: 0,
+                to: 1,
+                delay: 0,
+                duration: 10000,
+                ease: "Sine.easeInOut",
+                repeat: 0,
+                rotateToPath: true,
+                rotationOffset: 90
+            }));
+        }
     }
 }
