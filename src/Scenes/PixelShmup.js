@@ -4,12 +4,12 @@ class PixelShmup extends Phaser.Scene {
 
         this.my = {sprite: {}};
 
-        this.playerSpeed = 7;
+        this.playerSpeed = 10;
         this.playerBulletSpeed = 10;
         this.spawnTimer = 0;
         this.target1 = 240;
         this.target2 = 360;
-        this.enemyBulletSpeed = 10;
+        // this.enemyBulletSpeed = 10;
     }
 
     preload() {
@@ -36,7 +36,7 @@ class PixelShmup extends Phaser.Scene {
         this.load.audio("enemyDestroyed", "impactPlate_medium_001.ogg");
 
         // Update instruction text
-        document.getElementById('description').innerHTML = '<h2>Use A and D to move, use Space to fire</h2>'
+        document.getElementById('description').innerHTML = '<h2>Use A and D to move, use Space to fire, and use R to reset</h2>'
     }
 
     create() {
@@ -110,8 +110,14 @@ class PixelShmup extends Phaser.Scene {
         this.score = 0;
         this.displayScore = this.add.bitmapText(10, 0, 'kenneyPixelSquareFont', 'Score: ' + this.score, 32);
 
+        this.gameOver = "Game over! Press R to restart";
+        this.displayGameOver = this.add.bitmapText(375, 300, 'kenneyPixelSquareFont', this.gameOver, 64);
+        this.displayGameOver.maxWidth = 400;
+        this.displayGameOver.visible = false;
+
         this.left = this.input.keyboard.addKey("A");
         this.right = this.input.keyboard.addKey("D");
+        this.rKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
         this.space = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
         my.sprite.player = new Player(this, game.config.width/2, game.config.height - 40, "playerPlane", null, this.left, this.right, 5);
@@ -130,7 +136,7 @@ class PixelShmup extends Phaser.Scene {
             repeat: my.sprite.playerBulletGroup.maxSize - 1
         });
 
-        my.sprite.enemyBulletGroup = this.add.group({
+        /*my.sprite.enemyBulletGroup = this.add.group({
             defaultKey: "enemyBullet",
             maxSize: 1
         })
@@ -140,15 +146,15 @@ class PixelShmup extends Phaser.Scene {
             active: false,
             key: my.sprite.enemyBulletGroup.defaultKey,
             repeat: my.sprite.enemyBulletGroup.maxSize - 1
-        });
+        });*/
 
         // Number of update() calls between player's shots
         this.playerBulletCooldown = 10;
         this.playerBulletCooldownCounter =  0;
 
-        // Number of update() calls between enemy's shots
+        /* Number of update() calls between enemy's shots
         this.enemyBulletCooldown = 300;
-        this.enemyBulletCooldownCounter = 0;
+        this.enemyBulletCooldownCounter = 0;*/
 
         // Create animation for planes being destroyed
         this.anims.create({
@@ -170,7 +176,7 @@ class PixelShmup extends Phaser.Scene {
         let my = this.my;
         this.playerBulletCooldownCounter--;
         this.spawnTimer++;
-        this.enemyBulletCooldownCounter--;
+        // this.enemyBulletCooldownCounter--;
 
         if (this.currEnemies < this.totalEnemies) {
             if (this.spawnTimer == this.target1) {
@@ -218,6 +224,10 @@ class PixelShmup extends Phaser.Scene {
             }
         }
 
+        if (this.rKey.isDown) {
+            this.resetGame();
+        }
+
         for (let playerBullet of my.sprite.playerBulletGroup.getChildren()) {
             for (let enemy of my.sprite.spawnedEnemies) {
                 if (this.collides(enemy, playerBullet)) {
@@ -249,7 +259,7 @@ class PixelShmup extends Phaser.Scene {
             }
         }
 
-        // enemy firing behavior
+        /* enemy firing behavior
         for (let enemy of my.sprite.spawnedEnemies) {
             if (enemy.visible == true && enemy.x < 0) {
                 if (this.enemyBulletCooldownCounter < 0) {
@@ -267,16 +277,18 @@ class PixelShmup extends Phaser.Scene {
                     }
                 }
             }
-        }
+        }*/
 
-        // collision for enemyBullet and player
-        for (let enemyBullet of my.sprite.enemyBulletGroup.getChildren()) {
-            if (this.collides(my.sprite.player, enemyBullet)) {
-                // play destroy animation and playerDestroyed sound when an enemyBullet hits the player
+        // collision for enemy and player
+        for (let enemy of my.sprite.spawnedEnemies) {
+            if (this.collides(enemy, my.sprite.player)) {
+                // play destroy animation and playerDestroyed sound when player and enemy make contact
                 this.explosion = this.add.sprite(my.sprite.player.x, my.sprite.player.y, "explosion1").setScale(2).play("explosion");
+                this.explosion = this.add.sprite(enemy.x, enemy.y, "explosion1").setScale(2).play("explosion");
                 
-                // clear out enemyBullet and player
-                enemyBullet.y = -100;
+                // clear out enemy and player
+                enemy.stopFollow();
+                enemy.visible = false;
                 my.sprite.player.visible = false;
                 my.sprite.player.x = -100;
 
@@ -284,22 +296,37 @@ class PixelShmup extends Phaser.Scene {
                     volume: 1
                 });
 
+                this.sound.play("enemyDestroyed", {
+                    volume: 1
+                });
+
+                for (let playerBullet of my.sprite.playerBulletGroup.getChildren()) {
+                    playerBullet.y = -100;
+                    if (playerBullet.y < -(playerBullet.displayHeight/2)) {
+                        playerBullet.active = false;
+                        playerBullet.visible = false;
+                    }
+                }
+                for (let enemy of my.sprite.spawnedEnemies) {
+                    enemy.visible = false;
+                    enemy.stopFollow();
+                    enemy.x = 1500;
+                    my.sprite.spawnedEnemies = my.sprite.spawnedEnemies.filter((enemy) => enemy.x < game.config.width);
+                }
+
+                this.target1 = -1;
+                this.target2 = -1;
+
                 this.explosion.on(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
-                    this.my.sprite.player.visible = true;
-                    this.my.sprite.player.x = game.config.width/2
+                    enemy.x = 1500;
+                    my.sprite.spawnedEnemies = my.sprite.spawnedEnemies.filter((enemy) => enemy.x < game.config.width);
+                    this.displayGameOver.visible = true;
                 }, this);
             }
         }
 
-        for (let enemyBullet of my.sprite.enemyBulletGroup.getChildren()) {
-            if (enemyBullet.y > game.config.height) {
-                enemyBullet.active = false;
-                enemyBullet.visible = false;
-            }
-        }
-
         my.sprite.playerBulletGroup.incY(-this.playerBulletSpeed);
-        my.sprite.enemyBulletGroup.incY(this.enemyBulletSpeed);
+        // my.sprite.enemyBulletGroup.incY(this.enemyBulletSpeed);
 
         my.sprite.spawnedEnemies = my.sprite.spawnedEnemies.filter((enemy) => enemy.y < game.config.height);
 
@@ -335,5 +362,36 @@ class PixelShmup extends Phaser.Scene {
                 rotationOffset: 90
             }));
         }
+    }
+
+    resetGame() {
+        console.log("Resetting");
+        this.totalEnemies = 10;
+        this.currEnemies = 0;
+        this.intermission = 0;
+        this.wave = 1;
+        this.waveCounter.setText('Wave: ' + this.wave);
+        this.score = 0;
+        this.displayScore.setText('Score: ' + this.score);
+        this.spawnTimer = 0;
+        this.target1 = 240;
+        this.target2 = 360;
+        this.my.sprite.player.x = game.config.width/2;
+        this.my.sprite.player.y = game.config.height - 40;
+        this.my.sprite.player.visible = true;
+        for (let playerBullet of this.my.sprite.playerBulletGroup.getChildren()) {
+                playerBullet.y = -100;
+            if (playerBullet.y < -(playerBullet.displayHeight/2)) {
+                playerBullet.active = false;
+                playerBullet.visible = false;
+            }
+        }
+        for (let enemy of this.my.sprite.spawnedEnemies) {
+            enemy.visible = false;
+            enemy.stopFollow();
+            enemy.x = 1500;
+            this.my.sprite.spawnedEnemies = this.my.sprite.spawnedEnemies.filter((enemy) => enemy.x < game.config.width);
+        }
+        this.displayGameOver.visible = false;
     }
 }
