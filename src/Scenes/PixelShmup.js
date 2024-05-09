@@ -88,6 +88,61 @@ class PixelShmup extends Phaser.Scene {
             648, 860
         ];
 
+        let points3 = [
+            403, -60,
+            403, 11,
+            341, 43,
+            191, 141,
+            174, 255,
+            279, 292,
+            466, 317,
+            637, 323,
+            721, 357,
+            780, 405,
+            782, 474,
+            676, 532,
+            449, 546,
+            196, 565,
+            125, 626,
+            169, 678,
+            281, 723,
+            374, 741,
+            426, 772,
+            454, 793,
+            500, 860
+        ];
+
+        let points4 = [
+            585, -60,
+            585, 13,
+            588, 48,
+            597, 77,
+            639, 107,
+            694, 135,
+            706, 173,
+            691, 222, 
+            613, 275,
+            498, 307,
+            422, 320,
+            302, 348,
+            240, 386,
+            241, 441,
+            318, 495,
+            473, 528,
+            584, 560,
+            687, 592,
+            584, 560,
+            687, 592,
+            738, 645,
+            741, 687,
+            699, 716,
+            619, 727,
+            483, 753,
+            388, 777,
+            357, 796,
+            300, 860
+        ];
+
         this.curves = [];
 
         this.enemyArr = [
@@ -100,6 +155,8 @@ class PixelShmup extends Phaser.Scene {
 
         this.curves.push(new Phaser.Curves.Spline(points1));
         this.curves.push(new Phaser.Curves.Spline(points2));
+        this.curves.push(new Phaser.Curves.Spline(points3));
+        this.curves.push(new Phaser.Curves.Spline(points4));
 
         this.totalEnemies = 10;
         this.currEnemies = 0;
