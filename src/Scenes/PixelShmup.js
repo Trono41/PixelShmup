@@ -131,8 +131,6 @@ class PixelShmup extends Phaser.Scene {
             473, 528,
             584, 560,
             687, 592,
-            584, 560,
-            687, 592,
             738, 645,
             741, 687,
             699, 716,
@@ -162,10 +160,10 @@ class PixelShmup extends Phaser.Scene {
         this.currEnemies = 0;
         this.intermission = 0;
         this.wave = 1;
-        this.waveCounter = this.add.bitmapText(10, 30, 'kenneyPixelSquareFont', 'Wave: ' + this.wave, 32);
+        this.waveCounter = this.add.bitmapText(10, 30, 'kenneyPixelSquareFont', 'Wave:  ' + this.wave, 32);
 
         this.score = 0;
-        this.displayScore = this.add.bitmapText(10, 0, 'kenneyPixelSquareFont', 'Score: ' + this.score, 32);
+        this.displayScore = this.add.bitmapText(10, 0, 'kenneyPixelSquareFont', 'Score:  ' + this.score, 32);
 
         this.gameOver = "Game over! Press R to restart";
         this.displayGameOver = this.add.bitmapText(375, 300, 'kenneyPixelSquareFont', this.gameOver, 64);
@@ -183,7 +181,7 @@ class PixelShmup extends Phaser.Scene {
         // Create bullet group for player (5)
         my.sprite.playerBulletGroup = this.add.group({
             defaultKey: "playerBullet",
-            maxSize: 10
+            maxSize: 5
         })
 
         my.sprite.playerBulletGroup.createMultiple({
@@ -249,7 +247,7 @@ class PixelShmup extends Phaser.Scene {
         }
 
         if (this.currEnemies == this.totalEnemies && my.sprite.spawnedEnemies.length == 0) {
-            console.log("Wave complete!");
+            this.waveCounter.setText('Wave  ' + this.wave + '  complete!');
             this.intermission++;
             if (this.intermission >= 300) {
                 this.totalEnemies += 5;
@@ -259,7 +257,7 @@ class PixelShmup extends Phaser.Scene {
                 this.target1 = 240;
                 this.target2 = 360;
                 this.wave++;
-                this.waveCounter.setText('Wave: ' + this.wave);
+                this.waveCounter.setText('Wave:  ' + this.wave);
             }
         }
 
@@ -290,7 +288,7 @@ class PixelShmup extends Phaser.Scene {
                 if (this.collides(enemy, playerBullet)) {
                     // add to score
                     this.score += 100;
-                    this.displayScore.setText('Score: ' + this.score);
+                    this.displayScore.setText('Score:  ' + this.score);
                     
                     // play destroy animation and enemyDestroyed sound when playerBullet hits an enemy
                     this.explosion = this.add.sprite(enemy.x, enemy.y, "explosion1").setScale(2).play("explosion");
@@ -422,7 +420,6 @@ class PixelShmup extends Phaser.Scene {
     }
 
     resetGame() {
-        console.log("Resetting");
         this.totalEnemies = 10;
         this.currEnemies = 0;
         this.intermission = 0;
