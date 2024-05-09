@@ -424,9 +424,9 @@ class PixelShmup extends Phaser.Scene {
         this.currEnemies = 0;
         this.intermission = 0;
         this.wave = 1;
-        this.waveCounter.setText('Wave: ' + this.wave);
+        this.waveCounter.setText('Wave:  ' + this.wave);
         this.score = 0;
-        this.displayScore.setText('Score: ' + this.score);
+        this.displayScore.setText('Score:  ' + this.score);
         this.spawnTimer = 0;
         this.target1 = 240;
         this.target2 = 360;
